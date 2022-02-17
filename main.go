@@ -77,7 +77,7 @@ func main() {
 					sqlDB = sqlDB.Limit(v)
 				}
 			} else {
-				sqlDB = sqlDB.Limit(50)
+				sqlDB = sqlDB.Limit(20)
 				ps = 50
 			}
 			if pageToken != "" {
