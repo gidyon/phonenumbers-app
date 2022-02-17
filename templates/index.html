@@ -9,6 +9,12 @@
     <title>Phone Numbers Application</title>
 
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         thead,
         tfoot {
             background-color: #3f87a6;
@@ -47,7 +53,7 @@
 <body>
     <h1>Phone Numbers SPA</h1>
     <div>
-        <form action="/" style="display: flex; align-items: flex-end; margin-bottom: 10px;">
+        <form action="/" style="display: flex; align-items: flex-end; margin-bottom: 10px;" id="formx">
             <div style="margin-right: 20px;">
                 <label for="cars">Filter By Country:</label><br>
 
@@ -102,6 +108,15 @@
                 {{ end}}
             </tbody>
         </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+        <div style="margin-right: 10px;">
+            <button type="submit" name="prevPage" value="2" form="formx">Previous Page</button>
+        </div>
+        <div>
+            <button type="submit" name="nextPage" value="1" form="formx">Next Page</button>
+        </div>
     </div>
 </body>
 
