@@ -13,14 +13,14 @@ import (
 	phonebook_v1 "github.com/gidyon/jumia-exercise/pkg/api/phonebook/v1"
 	"github.com/gidyon/jumia-exercise/pkg/api/phonebook/v1/utils/phoneutils"
 	"github.com/gidyon/micro/utils/errs"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
 
 type Options struct {
 	SqlDB  *gorm.DB
-	Logger *zap.Logger
+	Logger *zerolog.Logger
 }
 
 func NewPhoneBookService(ctx context.Context, opt *Options) (phonebook_v1.PhoneBookService, error) {
@@ -70,9 +70,7 @@ func (pb *phoneBookAPIServer) CreatePhoneRecord(
 		PhoneValid: req.PhoneValid,
 	}).Error
 	if err != nil {
-		pb.Logger.Error("failed to create phone record",
-			zap.String("method", "CreatePhoneRecord"),
-		)
+		pb.Logger.Error().Str("method", "CreatePhoneRecord").Str("error", err.Error()).Msg("failed to create phone record")
 		return errors.New("creating phone record failed")
 	}
 	return nil
@@ -94,9 +92,7 @@ func (pb *phoneBookAPIServer) GetPhoneRecord(
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return nil, errors.New("record not found")
 	default:
-		pb.Logger.Error("failed to get phone record",
-			zap.String("method", "GetPhoneRecord"),
-		)
+		pb.Logger.Error().Str("method", "GetPhoneRecord").Str("error", err.Error()).Msg("failed to get phone record")
 		return nil, errors.New("getting phone record failed")
 	}
 
@@ -215,9 +211,7 @@ func (pb *phoneBookAPIServer) DeletePhoneRecord(
 	// Delete from db
 	err := pb.SqlDB.Delete(&models.Phone{}, "id = ?", req.RecordId).Error
 	if err != nil {
-		pb.Logger.Error("failed to delete phone record",
-			zap.String("method", "DeletePhoneRecord"),
-		)
+		pb.Logger.Error().Str("method", "DeletePhoneRecord").Str("error", err.Error()).Msg("failed to delete phone record")
 		return errors.New("deleting phone record failed")
 	}
 
