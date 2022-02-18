@@ -151,7 +151,6 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "incorrect page token")
 		}
 		ID = uint(v)
-		fmt.Println(ID)
 	}
 
 	// Default db settings
@@ -208,7 +207,6 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 			PhoneValid:  db.PhoneValid,
 			CreateDate:  db.CreateDate.UTC().Format(time.RFC3339),
 		})
-		fmt.Println(db.ID)
 		ID = db.ID
 	}
 
@@ -217,8 +215,6 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 		// Next page token
 		token = base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(ID)))
 	}
-
-	fmt.Println(token)
 
 	return &phonebook_v1.ListPhoneRecordsResponse{
 		NextPageToken:   token,
