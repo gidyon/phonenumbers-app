@@ -5,3 +5,7 @@ type Country struct {
 	CountryCode uint   `gorm:"type:int(3)"`
 	CountryName string `gorm:"type:varchar(40)"`
 }
+
+func (*Country) TableName() string {
+	return "countries"
+}

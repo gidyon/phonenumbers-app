@@ -10,3 +10,7 @@ type Phone struct {
 	PhoneValid bool      `gorm:"index;type:tinyint(1)"`
 	CreateDate time.Time `gorm:"index;autoCreateTime"`
 }
+
+func (*Phone) TableName() string {
+	return "phones"
+}
