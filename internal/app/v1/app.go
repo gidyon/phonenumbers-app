@@ -35,6 +35,20 @@ func NewPhoneBookService(ctx context.Context, opt *Options) (phonebook_v1.PhoneB
 	pb := &phoneBookAPIServer{
 		Options: opt,
 	}
+
+	// Auto migrations only if tables don't exist
+	if !opt.SqlDB.Migrator().HasTable(&models.Phone{}) {
+		err := opt.SqlDB.AutoMigrate(&models.Phone{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to automigrate phones table: %w", err)
+		}
+	}
+	if !opt.SqlDB.Migrator().HasTable(&models.Country{}) {
+		err := opt.SqlDB.AutoMigrate(&models.Country{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to automigrate countries table: %w", err)
+		}
+	}
 	return pb, nil
 }
 
