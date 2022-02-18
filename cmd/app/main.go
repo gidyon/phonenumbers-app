@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	randomdata "github.com/Pallinder/go-randomdata"
@@ -42,17 +43,22 @@ func main() {
 	db, err := gorm.Open(sqlite.Open("phones.db"), &gorm.Config{})
 	handleError(err)
 
-	// Drop all tables
-	handleError(db.Migrator().DropTable(&models.Country{}, &models.Phone{}))
+	db = db.Debug()
 
-	// Auto migrate
-	handleError(db.Migrator().AutoMigrate(&models.Country{}, &models.Phone{}))
+	// This block is for easier demostration purposes, it is not necessary for a serious production application
+	{
+		// Drop all tables
+		handleError(db.Migrator().DropTable(&models.Country{}, &models.Phone{}))
 
-	// Add countries
-	handleError(addCounties(db))
+		// Auto migrate
+		handleError(db.Migrator().AutoMigrate(&models.Country{}, &models.Phone{}))
 
-	// Add phones
-	handleError(addRandomPhones(db))
+		// Add countries
+		handleError(addCounties(db))
+
+		// Add phones
+		handleError(addRandomPhones(db))
+	}
 
 	// Singleton instance of phone book service
 	appV1, err := app_v1.NewPhoneBookService(ctx, &app_v1.Options{
@@ -71,12 +77,44 @@ func main() {
 
 	router.LoadHTMLGlob("../../web/templates/*")
 
+	router.POST("/addPhone", func(c *gin.Context) {
+		var (
+			// Pagination variables
+			countryName = c.PostForm("country")
+			number      = c.PostForm("phone")
+			err         error
+		)
+
+		// Create record
+		err = appV1.CreatePhoneRecord(c.Request.Context(), &phonebook_v1.PhoneRecord{
+			CustId:      "",
+			CountryName: countryName,
+			CountryCode: 0,
+			Number:      number,
+			PhoneValid:  false,
+		})
+		if err != nil {
+			log.Error().Msg(err.Error())
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		// Redirect to home
+		c.Redirect(http.StatusFound, "/")
+	})
+
+	mu := sync.RWMutex{} // guards paginationStore
+	paginationStore := map[string]map[string]string{}
+
 	router.GET("/", func(c *gin.Context) {
 		var (
 			// Pagination variables
-			pageToken   = c.Query("pageToken")
-			pageSize    = c.Query("pageSize")
-			pageSizeInt int
+			prevPageToken = c.Query("prevPageToken")
+			nextPageToken = c.Query("nextPageToken")
+			pageSize      = c.Query("pageSize")
+			sessionId     = c.Query("sessionId")
+			pageToken     = ""
+			pageSizeInt   = 10
 
 			// Filters in query parameters
 			countryCodeFilter = c.Query("countryCodeFilter")
@@ -84,6 +122,15 @@ func main() {
 			phoneFilter       = c.Query("phoneFilter")
 		)
 
+		if pageToken != "" || nextPageToken == "" {
+			mu.RLock()
+			pageToken = paginationStore[sessionId][prevPageToken]
+			mu.RUnlock()
+		} else {
+			pageToken = nextPageToken
+		}
+
+		// Page size
 		if pageSize != "" {
 			pageSizeInt, err = strconv.Atoi(pageSize)
 			if err != nil {
@@ -93,7 +140,7 @@ func main() {
 		}
 
 		// Get phone numbers
-		records, err := appV1.ListPhoneRecords(c.Request.Context(), &phonebook_v1.ListPhoneRecordsRequest{
+		listRes, err := appV1.ListPhoneRecords(c.Request.Context(), &phonebook_v1.ListPhoneRecordsRequest{
 			PageSize:  int32(pageSizeInt),
 			PageToken: pageToken,
 			Filters: &phonebook_v1.PhoneRecordsFilters{
@@ -116,17 +163,29 @@ func main() {
 			return
 		}
 
+		mu.Lock()
+		_, ok := paginationStore[sessionId]
+		if !ok {
+			sessionId = randomdata.RandStringRunes(10)
+			paginationStore[sessionId] = map[string]string{
+				listRes.NextPageToken: "",
+			}
+		} else {
+			paginationStore[sessionId][listRes.NextPageToken] = pageToken
+		}
+		mu.Unlock()
+
 		// Render HTML
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title":             "Posts",
-			"phones":            records.PhoneRecords,
+			"phones":            listRes.PhoneRecords,
 			"countries":         countries,
 			"pageSize":          pageSize,
-			"pageToken":         pageToken,
 			"validStateFilter":  validStateFilter,
 			"countryCodeFilter": countryCodeFilter,
 			"phoneFilter":       phoneFilter,
-			"nextPageToken":     records.NextPageToken,
+			"nextPageToken":     listRes.NextPageToken,
+			"prevPageToken":     pageToken,
+			"sessionId":         sessionId,
 		})
 	})
 
@@ -141,24 +200,24 @@ func handleError(err error) {
 
 var countries = []*models.Country{
 	{
-		Code: 237,
-		Name: "Cameroon",
+		CountryCode: 237,
+		CountryName: "Cameroon",
 	},
 	{
-		Code: 251,
-		Name: "Ethiopia",
+		CountryCode: 251,
+		CountryName: "Ethiopia",
 	},
 	{
-		Code: +212,
-		Name: "Morocco",
+		CountryCode: +212,
+		CountryName: "Morocco",
 	},
 	{
-		Code: 258,
-		Name: "Mozambique",
+		CountryCode: 258,
+		CountryName: "Mozambique",
 	},
 	{
-		Code: +256,
-		Name: "Uganda",
+		CountryCode: +256,
+		CountryName: "Uganda",
 	},
 }
 
@@ -182,8 +241,8 @@ func addRandomPhones(db *gorm.DB) error {
 		country := randomCountry()
 		err = db.Create(&models.Phone{
 			Country: models.Country{
-				Code: country.Code,
-				Name: country.Name,
+				CountryCode: country.CountryCode,
+				CountryName: country.CountryName,
 			},
 			PhoneValid: randomState(),
 			Number:     fmt.Sprint(randomdata.Number(100000000, 999999999)),
