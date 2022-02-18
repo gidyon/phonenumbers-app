@@ -1,0 +1,124 @@
+{{ define "index.html" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Numbers Application</title>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        thead,
+        tfoot {
+            background-color: #3f87a6;
+            color: #fff;
+        }
+
+        tbody {
+            background-color: #e4f0f5;
+        }
+
+        caption {
+            padding: 10px;
+            caption-side: bottom;
+        }
+
+        table {
+            border-collapse: collapse;
+            border: 2px solid rgb(200, 200, 200);
+            letter-spacing: 1px;
+            font-family: sans-serif;
+            font-size: .8rem;
+        }
+
+        td,
+        th {
+            border: 1px solid rgb(190, 190, 190);
+            padding: 5px 10px;
+        }
+
+        td {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phone Numbers SPA</h1>
+    <div>
+        <form action="/" style="display: flex; align-items: flex-end; margin-bottom: 10px;" id="formx">
+            <div style="margin-right: 20px;">
+                <label for="cars">Filter By Country:</label><br>
+
+                <select name="countryCodeFilter">
+                    <option value="">All Countries</option>
+                    {{ range .countries}}
+                    {{$codeStr := .Code | toString}}
+                    <option value="{{.Code}}" {{ if eq $.countryCodeFilter $codeStr }}selected="selected" {{ end }}>
+                        {{.Name}}
+                    </option>
+                    {{ end}}
+                </select>
+            </div>
+            <div style="margin-right: 20px;">
+                <label for="cars">Filter By Valid:</label><br>
+                <select name="validStateFilter" value="{{.validStateFilter}}">
+                    <option value="">All Phones</option>
+                    <option value="VALID" {{ if eq .validStateFilter `VALID` }}selected="selected" {{ end }}>Valid
+                        Phones
+                    </option>
+                    <option value="NOT_VALID" {{ if eq .validStateFilter `NOT_VALID` }}selected="selected" {{ end }}>Not
+                        Valid Phones</option>
+                </select>
+            </div>
+            <div style="margin-right: 20px;">
+                <label for="cars">Filter By Number:</label><br>
+                <input name="phoneFilter" type="text" value="{{.phoneFilter}}">
+            </div>
+            <div>
+                <button type="submit">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Country</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Country Code</th>
+                    <th scope="col">Phone Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .phones}}
+                <tr>
+                    <td>{{ .CountryName }}</td>
+                    <td>{{ if .PhoneValid }} Valid {{else}} Not Valid {{ end }}</td>
+                    <td>{{ .CountryCode }}</td>
+                    <td>{{ .Number }}</td>
+                </tr>
+                {{ end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+        <div style="margin-right: 10px;">
+            <button type="submit" name="prevPage" value="2" form="formx">Previous Page</button>
+        </div>
+        <div>
+            <button type="submit" name="nextPage" value="1" form="formx">Next Page</button>
+        </div>
+    </div>
+</body>
+
+</html>
+{{ end }}
