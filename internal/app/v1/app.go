@@ -11,7 +11,7 @@ import (
 
 	"github.com/gidyon/jumia-exercise/internal/models"
 	phonebook_v1 "github.com/gidyon/jumia-exercise/pkg/api/phonebook/v1"
-	"github.com/gidyon/jumia-exercise/pkg/api/phonebook/v1/utils/phoneutils"
+	"github.com/gidyon/jumia-exercise/pkg/utils/phoneutils"
 	"github.com/gidyon/micro/utils/errs"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
@@ -149,6 +149,15 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 	if req.Filters != nil {
 		if req.Filters.PhoneNumber != "" {
 			db = db.Where("number  = ?", req.Filters.PhoneNumber)
+		}
+		if req.Filters.CountryCode != "" {
+			db = db.Where("country_code  = ?", req.Filters.CountryCode)
+		}
+		if req.Filters.ValidOnly && req.Filters.NotValidOnly {
+		} else if req.Filters.ValidOnly {
+			db = db.Where("phone_valid  = ?", true)
+		} else if req.Filters.NotValidOnly {
+			db = db.Where("phone_valid  = ?", false)
 		}
 	}
 
