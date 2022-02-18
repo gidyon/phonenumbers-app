@@ -4,7 +4,7 @@ import "time"
 
 type Phone struct {
 	ID         uint `gorm:"primaryKey;autoIncrement"`
-	Country    `gorm:"embedded;embeddedPrefix:country_"`
+	Country    `gorm:"embedded"`
 	Number     string    `gorm:"index;type:varchar(20);"`
 	CustId     string    `gorm:"index;type:varchar(32);"`
 	PhoneValid bool      `gorm:"index;type:tinyint(1)"`
