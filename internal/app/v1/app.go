@@ -62,8 +62,8 @@ func (pb *phoneBookAPIServer) CreatePhoneRecord(
 	err := pb.SqlDB.Create(&models.Phone{
 		ID: 0,
 		Country: models.Country{
-			Code: req.CountryCode,
-			Name: req.CountryName,
+			CountryCode: req.CountryCode,
+			CountryName: req.CountryName,
 		},
 		Number:     req.Number,
 		CustId:     req.CustId,
@@ -99,9 +99,9 @@ func (pb *phoneBookAPIServer) GetPhoneRecord(
 	return &phonebook_v1.PhoneRecord{
 		Id:          fmt.Sprint(db.ID),
 		CustId:      db.CustId,
-		CountryName: db.Country.Name,
-		CountryCode: db.Country.Code,
-		Number:      db.Country.Name,
+		CountryName: db.Country.CountryName,
+		CountryCode: db.Country.CountryCode,
+		Number:      db.Number,
 		PhoneValid:  db.PhoneValid,
 		CreateDate:  db.CreateDate.UTC().Format(time.RFC3339),
 	}, nil
@@ -137,6 +137,7 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "incorrect page token")
 		}
 		ID = uint(v)
+		fmt.Println(ID)
 	}
 
 	// Default db settings
@@ -184,16 +185,16 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 		if i == int(pageSize) {
 			break
 		}
-
 		pbs = append(pbs, &phonebook_v1.PhoneRecord{
 			Id:          fmt.Sprint(db.ID),
 			CustId:      db.CustId,
-			CountryName: db.Country.Name,
-			CountryCode: db.Country.Code,
-			Number:      db.Country.Name,
+			CountryName: db.Country.CountryName,
+			CountryCode: db.Country.CountryCode,
+			Number:      db.Number,
 			PhoneValid:  db.PhoneValid,
 			CreateDate:  db.CreateDate.UTC().Format(time.RFC3339),
 		})
+		fmt.Println(db.ID)
 		ID = db.ID
 	}
 
@@ -202,6 +203,8 @@ func (pb *phoneBookAPIServer) ListPhoneRecords(
 		// Next page token
 		token = base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(ID)))
 	}
+
+	fmt.Println(token)
 
 	return &phonebook_v1.ListPhoneRecordsResponse{
 		NextPageToken:   token,
