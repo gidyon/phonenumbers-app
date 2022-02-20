@@ -45,7 +45,8 @@ func main() {
 
 	db = db.Debug()
 
-	// This block is for easier demostration purposes, it is not necessary for a serious production application
+	// This block is for easier demostration purposes as it performs auto-migrations and populates data each time service starts
+	// It is not intended for a serious production application
 	{
 		// Drop all tables
 		handleError(db.Migrator().DropTable(&models.Country{}, &models.Phone{}))
@@ -86,7 +87,7 @@ func main() {
 		)
 
 		// Create record
-		err = appV1.CreatePhoneRecord(c.Request.Context(), &phonebook_v1.PhoneRecord{
+		_, err = appV1.CreatePhoneRecord(c.Request.Context(), &phonebook_v1.PhoneRecord{
 			CustId:      "",
 			CountryName: countryName,
 			CountryCode: 0,
@@ -113,8 +114,8 @@ func main() {
 			nextPageToken = c.Query("nextPageToken")
 			pageSize      = c.Query("pageSize")
 			sessionId     = c.Query("sessionId")
-			pageToken     = ""
-			pageSizeInt   = 10
+			pageSizeInt   = 20
+			pageToken     string
 
 			// Filters in query parameters
 			countryCodeFilter = c.Query("countryCodeFilter")
@@ -122,7 +123,8 @@ func main() {
 			phoneFilter       = c.Query("phoneFilter")
 		)
 
-		if pageToken != "" || nextPageToken == "" {
+		// Page token
+		if prevPageToken != "" {
 			mu.RLock()
 			pageToken = paginationStore[sessionId][prevPageToken]
 			mu.RUnlock()
@@ -163,6 +165,7 @@ func main() {
 			return
 		}
 
+		// Update some values for pagination
 		mu.Lock()
 		_, ok := paginationStore[sessionId]
 		if !ok {
