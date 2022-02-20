@@ -58,22 +58,21 @@ type phoneBookAPIServer struct {
 
 func (pb *phoneBookAPIServer) CreatePhoneRecord(
 	ctx context.Context, req *phonebook_v1.PhoneRecord,
-) error {
+) (*phonebook_v1.PhoneRecord, error) {
 	// Validate fields
 	switch {
 	case req == nil:
-		return errors.New("missing phonebook")
+		return nil, errors.New("missing phonebook")
 	case req.CountryName == "":
-		return errors.New("missing country")
+		return nil, errors.New("missing country")
 	case req.Number == "":
-		return errors.New("missing phone number")
+		return nil, errors.New("missing phone number")
 	}
 
 	// Validate phone
 	phoneutils.ValidatePhone(req)
 
-	// Create phone
-	err := pb.SqlDB.Create(&models.Phone{
+	db := &models.Phone{
 		ID: 0,
 		Country: models.Country{
 			CountryCode: req.CountryCode,
@@ -82,12 +81,24 @@ func (pb *phoneBookAPIServer) CreatePhoneRecord(
 		Number:     req.Number,
 		CustId:     req.CustId,
 		PhoneValid: req.PhoneValid,
-	}).Error
+	}
+
+	// Create phone
+	err := pb.SqlDB.Create(db).Error
 	if err != nil {
 		pb.Logger.Error().Str("method", "CreatePhoneRecord").Str("error", err.Error()).Msg("failed to create phone record")
-		return errors.New("creating phone record failed")
+		return nil, errors.New("creating phone record failed")
 	}
-	return nil
+
+	return &phonebook_v1.PhoneRecord{
+		Id:          fmt.Sprint(db.ID),
+		CustId:      db.CustId,
+		CountryName: db.Country.CountryName,
+		CountryCode: db.Country.CountryCode,
+		Number:      db.Number,
+		PhoneValid:  db.PhoneValid,
+		CreateDate:  db.CreateDate.UTC().Format(time.RFC3339),
+	}, nil
 }
 
 func (pb *phoneBookAPIServer) GetPhoneRecord(
