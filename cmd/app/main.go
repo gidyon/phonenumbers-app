@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"html/template"
 	"math/rand"
@@ -21,7 +22,13 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	port = flag.String("port", ":8080", "Port for server")
+)
+
 func main() {
+	flag.Parse()
+
 	ctx := context.Background()
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -185,7 +192,7 @@ func main() {
 		})
 	})
 
-	handleError(router.Run(":8080"))
+	handleError(router.Run(*port))
 }
 
 func handleError(err error) {
