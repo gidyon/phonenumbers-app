@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	port = flag.String("port", ":8080", "Port for server")
+	port  = flag.String("port", ":8080", "Port for server")
+	debug = flag.Bool("debug", true, "Whether to run server in debug mode, will also set some default data")
 )
 
 func main() {
@@ -49,22 +50,26 @@ func main() {
 	db, err := gorm.Open(sqlite.Open("phones.db"), &gorm.Config{})
 	handleError(err)
 
-	db = db.Debug()
+	if *debug {
+		db = db.Debug()
 
-	// This block is for easier demostration purposes as it performs auto-migrations and populates data each time service starts
-	// It is not intended for a serious production application
-	{
-		// Drop all tables
-		handleError(db.Migrator().DropTable(&models.Country{}, &models.Phone{}))
+		gin.SetMode(gin.DebugMode)
 
-		// Auto migrate
-		handleError(db.Migrator().AutoMigrate(&models.Country{}, &models.Phone{}))
+		// This block is for easier demostration purposes as it performs auto-migrations and populates data each time service starts
+		// It is not intended for a serious production application
+		{
+			// Drop all tables
+			handleError(db.Migrator().DropTable(&models.Country{}, &models.Phone{}))
 
-		// Add countries
-		handleError(addCounties(db))
+			// Auto migrate
+			handleError(db.Migrator().AutoMigrate(&models.Country{}, &models.Phone{}))
 
-		// Add phones
-		handleError(addRandomPhones(db))
+			// Add countries
+			handleError(addCounties(db))
+
+			// Add phones
+			handleError(addRandomPhones(db))
+		}
 	}
 
 	// Singleton instance of phone book service
