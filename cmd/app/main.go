@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	randomdata "github.com/Pallinder/go-randomdata"
@@ -104,8 +103,8 @@ func main() {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	mu := sync.RWMutex{} // guards paginationStore
-	paginationStore := map[string]map[string]string{}
+	// Pagination API
+	pagination := phoneutils.NewPaginationAPI()
 
 	router.GET("/", func(c *gin.Context) {
 		var (
@@ -115,7 +114,7 @@ func main() {
 			pageSize      = c.Query("pageSize")
 			sessionId     = c.Query("sessionId")
 			pageSizeInt   = 20
-			pageToken     string
+			pageInfo      = &phoneutils.PageInfo{}
 
 			// Filters in query parameters
 			countryCodeFilter = c.Query("countryCodeFilter")
@@ -125,11 +124,9 @@ func main() {
 
 		// Page token
 		if prevPageToken != "" {
-			mu.RLock()
-			pageToken = paginationStore[sessionId][prevPageToken]
-			mu.RUnlock()
+			pageInfo = pagination.GetBackPageInfo(sessionId, prevPageToken)
 		} else {
-			pageToken = nextPageToken
+			pageInfo.PageToken = nextPageToken
 		}
 
 		// Page size
@@ -144,7 +141,7 @@ func main() {
 		// Get phone numbers
 		listRes, err := appV1.ListPhoneRecords(c.Request.Context(), &phonebook_v1.ListPhoneRecordsRequest{
 			PageSize:  int32(pageSizeInt),
-			PageToken: pageToken,
+			PageToken: pageInfo.PageToken,
 			Filters: &phonebook_v1.PhoneRecordsFilters{
 				CountryCode:  countryCodeFilter,
 				ValidOnly:    validStateFilter == phoneutils.ValidState,
@@ -166,17 +163,11 @@ func main() {
 		}
 
 		// Update some values for pagination
-		mu.Lock()
-		_, ok := paginationStore[sessionId]
-		if !ok {
-			sessionId = randomdata.RandStringRunes(10)
-			paginationStore[sessionId] = map[string]string{
-				listRes.NextPageToken: "",
-			}
+		if pagination.SessionExist(sessionId) {
+			pageInfo = pagination.SetNextPageInfo(sessionId, listRes.NextPageToken, pageInfo.PageToken)
 		} else {
-			paginationStore[sessionId][listRes.NextPageToken] = pageToken
+			sessionId = pagination.SetNewSession(listRes.CollectionCount, listRes.NextPageToken)
 		}
-		mu.Unlock()
 
 		// Render HTML
 		c.HTML(http.StatusOK, "index.html", gin.H{
@@ -187,7 +178,9 @@ func main() {
 			"countryCodeFilter": countryCodeFilter,
 			"phoneFilter":       phoneFilter,
 			"nextPageToken":     listRes.NextPageToken,
-			"prevPageToken":     pageToken,
+			"collectionCount":   pageInfo.CollectionCount,
+			"pageNumber":        pageInfo.PageNumber,
+			"prevPageToken":     pageInfo.PageToken,
 			"sessionId":         sessionId,
 		})
 	})
