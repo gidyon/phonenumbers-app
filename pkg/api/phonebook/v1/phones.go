@@ -1,4 +1,4 @@
-// Package phonebook is the interface for managing phone records
+// Package phonebook has the interface for managing phone records
 package phonebook
 
 import "context"
