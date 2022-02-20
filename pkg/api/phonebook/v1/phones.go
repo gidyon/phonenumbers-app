@@ -4,7 +4,7 @@ package phonebook
 import "context"
 
 type PhoneBookService interface {
-	CreatePhoneRecord(context.Context, *PhoneRecord) error
+	CreatePhoneRecord(context.Context, *PhoneRecord) (*PhoneRecord, error)
 	GetPhoneRecord(context.Context, *GetPhoneRecordRequest) (*PhoneRecord, error)
 	ListPhoneRecords(context.Context, *ListPhoneRecordsRequest) (*ListPhoneRecordsResponse, error)
 	DeletePhoneRecord(context.Context, *DeletePhoneRecordRequest) error
