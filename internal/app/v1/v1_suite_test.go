@@ -35,7 +35,7 @@ var _ = BeforeSuite(func() {
 
 var _ = Describe("Phone Record", func() {
 
-	Context("Creating a book", func() {
+	Context("Creating a phone record", func() {
 		var (
 			req *phonebook_v1.PhoneRecord
 			ctx context.Context
@@ -55,20 +55,21 @@ var _ = Describe("Phone Record", func() {
 		When("Creating a phone record with incorrect or missing data", func() {
 			It("should fail when number is missing", func() {
 				req.Number = ""
-				err := phoneBookAPI.CreatePhoneRecord(ctx, req)
+				_, err := phoneBookAPI.CreatePhoneRecord(ctx, req)
 				Expect(err).Should(HaveOccurred())
 			})
 			It("should fail when country is missing", func() {
 				req.CountryName = ""
-				err := phoneBookAPI.CreatePhoneRecord(ctx, req)
+				_, err := phoneBookAPI.CreatePhoneRecord(ctx, req)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 
 		When("Creating a phone record with valid data", func() {
 			It("should successfully create phone record", func() {
-				err := phoneBookAPI.CreatePhoneRecord(ctx, req)
+				pb, err := phoneBookAPI.CreatePhoneRecord(ctx, req)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(pb).ShouldNot(BeNil())
 			})
 		})
 	})
@@ -91,6 +92,39 @@ var _ = Describe("Phone Record", func() {
 				req.RecordId = ""
 				_, err := phoneBookAPI.GetPhoneRecord(ctx, req)
 				Expect(err).Should(HaveOccurred())
+			})
+		})
+
+		When("Getting a phone record with correct details", func() {
+			var (
+				pb  *phonebook_v1.PhoneRecord
+				err error
+			)
+
+			Context("Lets create a phone record", func() {
+				It("should succeed", func() {
+					pb, err = phoneBookAPI.CreatePhoneRecord(ctx, &phonebook_v1.PhoneRecord{
+						CustId:      fmt.Sprint(randomdata.Number(1, 999)),
+						CountryName: randomdata.Country(randomdata.FullCountry),
+						CountryCode: 0,
+						Number:      randomdata.PhoneNumber(),
+						PhoneValid:  false,
+					})
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(pb).ShouldNot(BeNil())
+				})
+			})
+
+			Context("Getting the created phone record", func() {
+				It("should succeed", func() {
+					req.RecordId = pb.Id
+					record, err := phoneBookAPI.GetPhoneRecord(ctx, req)
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(record.CountryName).To(Equal(pb.CountryName))
+					Expect(record.CountryCode).To(Equal(pb.CountryCode))
+					Expect(record.Number).To(Equal(pb.Number))
+					Expect(record.PhoneValid).To(Equal(pb.PhoneValid))
+				})
 			})
 		})
 	})
