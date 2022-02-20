@@ -9,10 +9,31 @@
     <title>Phone Numbers Application</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .min-width {
+            min-width: 600px;
+        }
+
+        .add {
+            margin-bottom: 30px;
+            border: 1px solid grey;
+            padding: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
         }
 
         thead,
@@ -36,6 +57,7 @@
             letter-spacing: 1px;
             font-family: sans-serif;
             font-size: .8rem;
+            width: 100%;
         }
 
         td,
@@ -52,7 +74,8 @@
 
 <body>
     <h1>Phone Numbers SPA</h1>
-    <div>
+
+    <div class="min-width add">
         <form action="/addPhone" method="POST"
             style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 10px;" id="forma">
             <div style="margin-right: 20px;">
@@ -76,7 +99,8 @@
             </div>
         </form>
     </div>
-    <div>
+
+    <div class="min-width">
         <form action="/" style="display: flex; align-items: flex-end; margin-bottom: 10px;" id="formx">
             <div style="margin-right: 20px;">
                 <label for="cars">Filter By Country:</label><br>
@@ -113,7 +137,8 @@
             </div>
         </form>
     </div>
-    <div>
+
+    <div class="min-width">
         <table>
             <thead>
                 <tr>
@@ -136,7 +161,7 @@
         </table>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+    <div class="min-width pagination">
         <div style="margin-right: 10px;">
             <button type="submit" name="prevPageToken" value="{{.prevPageToken}}" form="formx">Previous Page</button>
         </div>
